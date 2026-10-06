@@ -1,7 +1,7 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useColorScheme } from 'react-native';
 
-import { Colors } from '@/constants/theme';
+import { Colors, ACareColors } from '@/constants/theme';
 
 export default function AppTabs() {
   const scheme = useColorScheme();
@@ -10,9 +10,12 @@ export default function AppTabs() {
   return (
     <NativeTabs
       backgroundColor={colors.background}
-      indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}>
-      <NativeTabs.Trigger name="index">
+      indicatorColor={ACareColors.primaryLight}
+      tintColor={ACareColors.primary}
+      labelStyle={{ selected: { color: ACareColors.primary } }}>
+
+      {/* ── Tab 1: Home ──────────────────────────────────── */}
+      <NativeTabs.Trigger name="(acare)/index">
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           src={require('@/assets/images/tabIcons/home.png')}
@@ -20,13 +23,33 @@ export default function AppTabs() {
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="explore">
-        <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
+      {/* ── Tab 2: Pesanan ───────────────────────────────── */}
+      <NativeTabs.Trigger name="(acare)/orders">
+        <NativeTabs.Trigger.Label>Pesanan</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
+          src={require('@/assets/images/tabIcons/orders.png')}
           renderingMode="template"
         />
       </NativeTabs.Trigger>
+
+      {/* ── Tab 3: Riwayat ───────────────────────────────── */}
+      <NativeTabs.Trigger name="(acare)/history">
+        <NativeTabs.Trigger.Label>Riwayat</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          src={require('@/assets/images/tabIcons/history.png')}
+          renderingMode="template"
+        />
+      </NativeTabs.Trigger>
+
+      {/* ── Tab 4: Profil ────────────────────────────────── */}
+      <NativeTabs.Trigger name="(acare)/profile">
+        <NativeTabs.Trigger.Label>Profil</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          src={require('@/assets/images/tabIcons/profile.png')}
+          renderingMode="template"
+        />
+      </NativeTabs.Trigger>
+
     </NativeTabs>
   );
 }
