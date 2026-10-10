@@ -10,7 +10,7 @@
  * di root layout begitu `setRole(...)` dipanggil.
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Modal,
   Pressable,
