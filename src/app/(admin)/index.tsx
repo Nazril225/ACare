@@ -29,6 +29,7 @@ import { useRouter } from 'expo-router';
 
 import { AdminOrderCard } from '@/components/admin/admin-order-card';
 import { AdminStatCard } from '@/components/admin/admin-stat-card';
+import { AccountMenuButton } from '@/components/account-menu-button';
 import { ACareColors } from '@/constants/theme';
 import { useACare } from '@/context/acare-context';
 import { Order } from '@/types/acare';
@@ -78,8 +79,12 @@ export default function AdminDashboardScreen() {
     router.push('/(admin)/orders');
   }
 
-  function handleNavigateToCustomer() {
-    router.push('/(acare)');
+  function handleNavigateToCustomers() {
+    router.push('/(admin)/customers');
+  }
+
+  function handleNavigateToTechnicians() {
+    router.push('/(admin)/technicians');
   }
 
   return (
@@ -102,14 +107,13 @@ export default function AdminDashboardScreen() {
               <Text style={styles.adminRoleBadgeDot}>●</Text>
               <Text style={styles.adminRoleBadgeText}>ADMIN</Text>
             </View>
-            <TouchableOpacity
-              style={styles.customerSwitchBtn}
-              activeOpacity={0.8}
-              onPress={handleNavigateToCustomer}
-              accessibilityRole="button"
-              accessibilityLabel="Beralih ke Tampilan Pelanggan">
-              <Text style={styles.customerSwitchBtnText}>Tampilan Customer →</Text>
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <AccountMenuButton
+                initial="A"
+                size={40}
+                accessibilityLabel="Menu akun admin"
+              />
+            </View>
           </View>
 
           <Text style={styles.headerTitle}>Dashboard Admin</Text>
@@ -217,22 +221,34 @@ export default function AdminDashboardScreen() {
           </View>
 
           {/* Customer */}
-          <View style={styles.masterDataItem}>
+          <TouchableOpacity
+            style={styles.masterDataItem}
+            activeOpacity={0.75}
+            onPress={handleNavigateToCustomers}
+            accessibilityRole="button"
+            accessibilityLabel={`Kelola data customer: ${customers.length} pelanggan`}>
             <View style={[styles.masterIconWrap, { backgroundColor: '#F0F9FF' }]}>
               <Text style={styles.masterIconText}>👥</Text>
             </View>
             <Text style={styles.masterCountText}>{customers.length}</Text>
             <Text style={styles.masterLabelText}>Customer</Text>
-          </View>
+            <Text style={styles.masterActionText}>Kelola →</Text>
+          </TouchableOpacity>
 
           {/* Teknisi */}
-          <View style={styles.masterDataItem}>
+          <TouchableOpacity
+            style={styles.masterDataItem}
+            activeOpacity={0.75}
+            onPress={handleNavigateToTechnicians}
+            accessibilityRole="button"
+            accessibilityLabel={`Kelola data teknisi: ${technicians.length} teknisi`}>
             <View style={[styles.masterIconWrap, { backgroundColor: '#FEF3C7' }]}>
               <Text style={styles.masterIconText}>👷</Text>
             </View>
             <Text style={styles.masterCountText}>{technicians.length}</Text>
             <Text style={styles.masterLabelText}>Teknisi</Text>
-          </View>
+            <Text style={styles.masterActionText}>Kelola →</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -307,6 +323,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 6,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   adminRoleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -325,19 +346,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: ACareColors.white,
     letterSpacing: 0.8,
-  },
-  customerSwitchBtn: {
-    backgroundColor: ACareColors.white,
-    borderWidth: 1,
-    borderColor: ACareColors.slate300,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  customerSwitchBtnText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: ACareColors.primary,
   },
   headerTitle: {
     fontSize: 24,
@@ -475,6 +483,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: ACareColors.slate500,
     fontWeight: '600',
+  },
+  masterActionText: {
+    fontSize: 10,
+    color: ACareColors.primary,
+    fontWeight: '700',
+    marginTop: 2,
   },
 
   // ── Orders List ─────────────────────────────────────────────────────────────

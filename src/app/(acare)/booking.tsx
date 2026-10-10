@@ -252,11 +252,11 @@ export default function BookingScreen() {
   }
 
   function handleViewOrders() {
-    router.replace('/(acare)/orders');
+    router.replace('/(acare)/(tabs)/orders');
   }
 
   function handleBackToHome() {
-    router.replace('/(acare)');
+    router.replace('/(acare)/(tabs)');
   }
 
   // ── Render Header Navigasi ──────────────────────────────────────────────────

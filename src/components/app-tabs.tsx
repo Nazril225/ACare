@@ -15,7 +15,7 @@ export default function AppTabs() {
       labelStyle={{ selected: { color: ACareColors.primary } }}>
 
       {/* ── Tab 1: Home ──────────────────────────────────── */}
-      <NativeTabs.Trigger name="(acare)/index">
+      <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           src={require('@/assets/images/tabIcons/home.png')}
@@ -24,7 +24,7 @@ export default function AppTabs() {
       </NativeTabs.Trigger>
 
       {/* ── Tab 2: Pesanan ───────────────────────────────── */}
-      <NativeTabs.Trigger name="(acare)/orders">
+      <NativeTabs.Trigger name="orders">
         <NativeTabs.Trigger.Label>Pesanan</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           src={require('@/assets/images/tabIcons/orders.png')}
@@ -33,7 +33,7 @@ export default function AppTabs() {
       </NativeTabs.Trigger>
 
       {/* ── Tab 3: Riwayat ───────────────────────────────── */}
-      <NativeTabs.Trigger name="(acare)/history">
+      <NativeTabs.Trigger name="history">
         <NativeTabs.Trigger.Label>Riwayat</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           src={require('@/assets/images/tabIcons/history.png')}
@@ -42,7 +42,7 @@ export default function AppTabs() {
       </NativeTabs.Trigger>
 
       {/* ── Tab 4: Profil ────────────────────────────────── */}
-      <NativeTabs.Trigger name="(acare)/profile">
+      <NativeTabs.Trigger name="profile">
         <NativeTabs.Trigger.Label>Profil</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           src={require('@/assets/images/tabIcons/profile.png')}

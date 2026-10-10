@@ -16,6 +16,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,7 +28,7 @@ const BOTTOM_NAV_HEIGHT = 80;
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const { currentUser, orders, role } = useACare();
+  const { currentUser, orders, role, setRole } = useACare();
 
   // Hitung ringkasan pesanan customer ini
   const myOrders = useMemo(() => {
@@ -162,6 +163,17 @@ export default function ProfileScreen() {
           <Text style={styles.appVersionText}>ACare Mobile v1.0.0</Text>
         </View>
       </View>
+
+      {/* ── Aksi: Ganti Peran ───────────────────────────────────────────────── */}
+      <TouchableOpacity
+        style={styles.switchRoleBtn}
+        activeOpacity={0.85}
+        onPress={() => setRole(null)}
+        accessibilityRole="button"
+        accessibilityLabel="Ganti peran masuk">
+        <Text style={styles.switchRoleBtnIcon}>⇄</Text>
+        <Text style={styles.switchRoleBtnText}>Ganti Peran / Keluar</Text>
+      </TouchableOpacity>
 
     </ScrollView>
   );
@@ -366,5 +378,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: ACareColors.slate500,
     fontWeight: '600',
+  },
+
+  // ── Ganti Peran ─────────────────────────────────────────────────────────────
+  switchRoleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: ACareColors.white,
+    borderRadius: 14,
+    paddingVertical: 14,
+    borderWidth: 1.5,
+    borderColor: ACareColors.primary,
+  },
+  switchRoleBtnIcon: {
+    fontSize: 16,
+    color: ACareColors.primary,
+    fontWeight: '700',
+  },
+  switchRoleBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: ACareColors.primary,
   },
 });

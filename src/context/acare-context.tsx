@@ -62,10 +62,16 @@ interface ACareStats {
 
 interface ACareContextType {
   // ── Peran & Profil ──────────────────────────────────────────────────────────
-  /** Peran pengguna yang aktif saat ini. */
-  role: UserRole;
-  /** Ubah peran aktif (customer ↔ admin). */
-  setRole: (role: UserRole) => void;
+  /**
+   * Peran pengguna yang aktif saat ini.
+   * `null` berarti belum memilih peran (layar pemilihan peran ditampilkan).
+   */
+  role: UserRole | null;
+  /**
+   * Ubah peran aktif (customer ↔ admin).
+   * Kirim `null` untuk kembali ke layar pemilihan peran.
+   */
+  setRole: (role: UserRole | null) => void;
   /** Profil pelanggan yang sedang "login" (dapat diganti untuk demo). */
   currentUser: CustomerUser;
   /** Ganti profil pelanggan aktif. */
@@ -165,8 +171,8 @@ interface ACareProviderProps {
 }
 
 export function ACareProvider({ children }: ACareProviderProps) {
-  // Peran aktif
-  const [role, setRole] = useState<UserRole>('customer');
+  // Peran aktif (null = belum memilih, layar pemilihan peran tampil)
+  const [role, setRole] = useState<UserRole | null>(null);
 
   // Profil pelanggan aktif (default: pelanggan pertama)
   const [currentUser, setCurrentUser] = useState<CustomerUser>(

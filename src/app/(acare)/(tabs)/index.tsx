@@ -8,7 +8,7 @@
  *  D. Pesanan Aktif — daftar order aktif currentUser dari context
  */
 
-import React from 'react';
+import { useRouter } from 'expo-router';
 import {
   FlatList,
   ScrollView,
@@ -18,10 +18,10 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 
 import { ActiveOrderCard } from '@/components/acare/active-order-card';
 import { ServiceCard } from '@/components/acare/service-card';
+import { AccountMenuButton } from '@/components/account-menu-button';
 import { ACareColors } from '@/constants/theme';
 import { useACare } from '@/context/acare-context';
 import { Order, ServiceItem } from '@/types/acare';
@@ -85,18 +85,17 @@ export default function HomeCustomerScreen() {
           </View>
 
           {/* Sapaan */}
-          <Text style={styles.greeting}>Halo, {firstName}! 👋</Text>
+          <Text style={styles.greeting}>Halo, {firstName}! </Text>
           <Text style={styles.subtitle}>
             Butuh layanan AC? Kami siap membantu.
           </Text>
         </View>
 
-        {/* Avatar placeholder */}
-        <View style={styles.avatar}>
-          <Text style={styles.avatarInitial}>
-            {firstName.charAt(0).toUpperCase()}
-          </Text>
-        </View>
+        {/* Tombol akun (avatar) → menu ganti peran */}
+        <AccountMenuButton
+          initial={firstName.charAt(0).toUpperCase()}
+          accessibilityLabel="Menu akun dan peran"
+        />
       </View>
 
       {/* ── B. Hero / Banner ───────────────────────────────────────────────── */}
@@ -235,22 +234,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: ACareColors.slate500,
     marginTop: 2,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: ACareColors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: ACareColors.accent,
-    marginTop: 4,
-  },
-  avatarInitial: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: ACareColors.primary,
   },
 
   // ── Hero ────────────────────────────────────────────────────────────────────
