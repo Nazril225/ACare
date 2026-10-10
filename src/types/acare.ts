@@ -1,7 +1,7 @@
 // ─── Role ────────────────────────────────────────────────────────────────────
 
 /** Peran pengguna yang sedang aktif di sesi aplikasi ACare. */
-export type UserRole = 'customer' | 'admin';
+export type UserRole = 'customer' | 'admin' | 'technician';
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 

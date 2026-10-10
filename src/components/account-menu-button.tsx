@@ -17,9 +17,10 @@ import {
   View,
 } from 'react-native';
 
+import { TechnicianLoginPicker } from '@/components/technician/technician-login-picker';
 import { ACareColors } from '@/constants/theme';
 import { useACare } from '@/context/acare-context';
-import { UserRole } from '@/types/acare';
+import { Technician, UserRole } from '@/types/acare';
 
 interface AccountMenuButtonProps {
   /** Huruf awal yang ditampilkan di dalam avatar. */
@@ -50,6 +51,12 @@ const ROLE_OPTIONS: RoleOption[] = [
     label: 'Masuk sebagai Admin',
     description: 'Dashboard operasional',
   },
+  {
+    role: 'technician',
+    icon: '👷',
+    label: 'Masuk sebagai Teknisi',
+    description: 'Area pengerjaan lapangan',
+  },
 ];
 
 export function AccountMenuButton({
@@ -57,16 +64,28 @@ export function AccountMenuButton({
   size = 44,
   accessibilityLabel = 'Menu akun dan peran',
 }: AccountMenuButtonProps) {
-  const { role, setRole } = useACare();
+  const { role, setRole, technicians, currentTechnician, setCurrentTechnician } =
+    useACare();
   const [open, setOpen] = useState(false);
+  const [step, setStep] = useState<'menu' | 'technician'>('menu');
 
   function choose(next: UserRole | null) {
     setOpen(false);
+    setStep('menu');
     setRole(next);
   }
 
   function chooseOption(option: RoleOption) {
+    if (option.role === 'technician') {
+      setStep('technician');
+      return;
+    }
     choose(option.role);
+  }
+
+  function chooseTechnician(technician: Technician) {
+    setCurrentTechnician(technician);
+    choose('technician');
   }
 
   const dynamicAvatar = {
@@ -80,7 +99,10 @@ export function AccountMenuButton({
       <TouchableOpacity
         style={[styles.avatar, dynamicAvatar]}
         activeOpacity={0.8}
-        onPress={() => setOpen(true)}
+        onPress={() => {
+          setStep('menu');
+          setOpen(true);
+        }}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}>
         <Text style={styles.avatarInitial}>{initial}</Text>
@@ -95,67 +117,76 @@ export function AccountMenuButton({
           <Pressable style={styles.sheet} onPress={() => {}}>
             <View style={styles.sheetHandle} />
 
-            <>
-              <Text style={styles.sheetTitle}>Ganti Peran</Text>
-              <Text style={styles.sheetSubtitle}>
-                Masuk sebagai peran lain untuk mengakses fitur yang berbeda
-              </Text>
-
-              {ROLE_OPTIONS.map((option) => {
-                const isActive = role === option.role;
-                return (
-                  <TouchableOpacity
-                    key={option.role}
-                    style={[
-                      styles.optionRow,
-                      isActive && styles.optionRowActive,
-                    ]}
-                    activeOpacity={0.8}
-                    onPress={() => chooseOption(option)}
-                    accessibilityRole="button"
-                    accessibilityLabel={option.label}>
-                    <View style={styles.optionIconWrap}>
-                      <Text style={styles.optionIcon}>{option.icon}</Text>
-                    </View>
-
-                    <View style={styles.optionTextWrap}>
-                      <Text style={styles.optionLabel}>{option.label}</Text>
-                      <Text style={styles.optionDescription}>
-                        {option.description}
-                      </Text>
-                    </View>
-
-                    {isActive ? (
-                      <Text style={styles.optionCheck}>✓</Text>
-                    ) : (
-                      <Text style={styles.optionChevron}>›</Text>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-
-              <View style={styles.divider} />
-
-              <TouchableOpacity
-                style={styles.switchRoleRow}
-                activeOpacity={0.7}
-                onPress={() => choose(null)}
-                accessibilityRole="button"
-                accessibilityLabel="Ganti peran dan pilih ulang">
-                <Text style={styles.switchRoleText}>
-                  ⇄  Ganti Peran (Pilih Ulang)
+            {step === 'technician' ? (
+              <TechnicianLoginPicker
+                technicians={technicians}
+                selectedId={currentTechnician?.id ?? null}
+                onSelect={chooseTechnician}
+                onCancel={() => setStep('menu')}
+              />
+            ) : (
+              <>
+                <Text style={styles.sheetTitle}>Ganti Peran</Text>
+                <Text style={styles.sheetSubtitle}>
+                  Masuk sebagai peran lain untuk mengakses fitur yang berbeda
                 </Text>
-              </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.cancelBtn}
-                activeOpacity={0.7}
-                onPress={() => setOpen(false)}
-                accessibilityRole="button"
-                accessibilityLabel="Tutup menu akun">
-                <Text style={styles.cancelBtnText}>Batal</Text>
-              </TouchableOpacity>
-            </>
+                {ROLE_OPTIONS.map((option) => {
+                  const isActive = role === option.role;
+                  return (
+                    <TouchableOpacity
+                      key={option.role}
+                      style={[
+                        styles.optionRow,
+                        isActive && styles.optionRowActive,
+                      ]}
+                      activeOpacity={0.8}
+                      onPress={() => chooseOption(option)}
+                      accessibilityRole="button"
+                      accessibilityLabel={option.label}>
+                      <View style={styles.optionIconWrap}>
+                        <Text style={styles.optionIcon}>{option.icon}</Text>
+                      </View>
+
+                      <View style={styles.optionTextWrap}>
+                        <Text style={styles.optionLabel}>{option.label}</Text>
+                        <Text style={styles.optionDescription}>
+                          {option.description}
+                        </Text>
+                      </View>
+
+                      {isActive ? (
+                        <Text style={styles.optionCheck}>✓</Text>
+                      ) : (
+                        <Text style={styles.optionChevron}>›</Text>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+
+                <View style={styles.divider} />
+
+                <TouchableOpacity
+                  style={styles.switchRoleRow}
+                  activeOpacity={0.7}
+                  onPress={() => choose(null)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Ganti peran dan pilih ulang">
+                  <Text style={styles.switchRoleText}>
+                    ⇄  Ganti Peran (Pilih Ulang)
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.cancelBtn}
+                  activeOpacity={0.7}
+                  onPress={() => setOpen(false)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Tutup menu akun">
+                  <Text style={styles.cancelBtnText}>Batal</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </Pressable>
         </Pressable>
       </Modal>

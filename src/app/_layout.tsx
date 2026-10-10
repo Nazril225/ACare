@@ -13,6 +13,7 @@ SplashScreen.preventAutoHideAsync();
  *  - Belum memilih peran (null) → layar pemilihan peran
  *  - Customer                    → grup (acare) berisi tab pelanggan
  *  - Admin                       → grup (admin) berisi dashboard operasional
+ *  - Technician                  → grup (technician) berisi dashboard teknisi
  *
  * Guard `Stack.Protected` memindahkan layar secara otomatis saat `setRole(...)`
  * dipanggil, dan menghapus riwayat grup yang tidak lagi tersedia.
@@ -28,6 +29,10 @@ function RootNavigator() {
 
       <Stack.Protected guard={role === 'admin'}>
         <Stack.Screen name="(admin)" />
+      </Stack.Protected>
+
+      <Stack.Protected guard={role === 'technician'}>
+        <Stack.Screen name="(technician)" />
       </Stack.Protected>
 
       <Stack.Protected guard={role === null}>

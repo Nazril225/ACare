@@ -27,6 +27,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { StatusBadge } from '@/components/acare/status-badge';
+import { TechnicianStatusBadge } from '@/components/admin/technician-status-badge';
 import { ACareColors } from '@/constants/theme';
 import { useACare } from '@/context/acare-context';
 import { OrderStatus } from '@/types/acare';
@@ -74,9 +75,10 @@ export default function AdminOrderDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { orderId } = useLocalSearchParams<{ orderId?: string }>();
-  const { orders, technicians, customers, updateOrderStatus } = useACare();
+  const { orders, technicians, customers, updateOrderStatus, assignTechnician } = useACare();
 
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [showReassign, setShowReassign] = useState<boolean>(false);
 
   // Ambil data order dari context
   const order = useMemo(() => {
@@ -107,6 +109,23 @@ export default function AdminOrderDetailScreen() {
     );
 
     // Hilangkan pesan feedback setelah beberapa detik
+    setTimeout(() => {
+      setFeedbackMessage(null);
+    }, 4000);
+  }
+
+  function handleAssign(techId: string) {
+    if (!order) return;
+    const selectedTech = technicians.find((t) => t.id === techId);
+    if (!selectedTech) return;
+
+    assignTechnician(order.id, techId);
+    setShowReassign(false);
+
+    setFeedbackMessage(
+      `Teknisi ${selectedTech.name} berhasil ditugaskan ke pesanan ini.`
+    );
+
     setTimeout(() => {
       setFeedbackMessage(null);
     }, 4000);
@@ -377,40 +396,133 @@ export default function AdminOrderDetailScreen() {
           </View>
         </View>
 
-        {/* ── 6. Data Teknisi ───────────────────────────────────────────────── */}
+        {/* ── 6. Data Teknisi & Penugasan ───────────────────────────────────── */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Teknisi yang Bertugas</Text>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Teknisi yang Bertugas</Text>
+            {order.technicianId && (
+              <TouchableOpacity
+                style={styles.reassignToggleBtn}
+                activeOpacity={0.7}
+                onPress={() => setShowReassign((prev) => !prev)}>
+                <Text style={styles.reassignToggleBtnText}>
+                  {showReassign ? 'Tutup' : 'Ganti Teknisi'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
           {order.technicianName ? (
-            <View style={styles.techAssignedWrap}>
-              <View style={styles.techAvatar}>
-                <Text style={styles.techAvatarIcon}>👷</Text>
+            <View style={styles.techAssignedContainer}>
+              <View style={styles.techAssignedWrap}>
+                <View style={styles.techAvatar}>
+                  <Text style={styles.techAvatarIcon}>👷</Text>
+                </View>
+
+                <View style={styles.techInfo}>
+                  <Text style={styles.techName}>{order.technicianName}</Text>
+                  {assignedTech && (
+                    <>
+                      <Text style={styles.techSpec}>
+                        Spesialisasi: {assignedTech.specialization}
+                      </Text>
+                      <Text style={styles.techRating}>
+                        ⭐ {assignedTech.rating} • {assignedTech.completedJobs} Selesai
+                      </Text>
+                      <Text style={styles.techPhone}>
+                        📞 {assignedTech.phone}
+                      </Text>
+                    </>
+                  )}
+                </View>
               </View>
 
-              <View style={styles.techInfo}>
-                <Text style={styles.techName}>{order.technicianName}</Text>
-                {assignedTech && (
-                  <>
-                    <Text style={styles.techSpec}>
-                      Spesialisasi: {assignedTech.specialization}
-                    </Text>
-                    <Text style={styles.techRating}>
-                      ⭐ {assignedTech.rating} • {assignedTech.completedJobs} Selesai
-                    </Text>
-                    <Text style={styles.techPhone}>
-                      📞 {assignedTech.phone}
-                    </Text>
-                  </>
-                )}
-              </View>
+              {/* Tombol ke Detail Teknisi */}
+              {order.technicianId && (
+                <TouchableOpacity
+                  style={styles.viewTechProfileBtn}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    router.push({
+                      pathname: '/(admin)/technician-detail',
+                      params: { technicianId: order.technicianId },
+                    });
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Lihat profil teknisi ${order.technicianName}`}>
+                  <Text style={styles.viewTechProfileBtnText}>
+                    Lihat Profil Teknisi →
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           ) : (
             <View style={styles.techUnassignedBox}>
               <Text style={styles.techUnassignedIcon}>⏳</Text>
               <Text style={styles.techUnassignedTitle}>Teknisi belum ditugaskan</Text>
               <Text style={styles.techUnassignedSub}>
-                Belum ada teknisi yang di-assign untuk pesanan ini.
+                Pilih teknisi di bawah untuk menugaskan pengerjaan pesanan ini.
               </Text>
+            </View>
+          )}
+
+          {/* Opsi Daftar Teknisi untuk Ditugaskan / Diganti */}
+          {(!order.technicianId || showReassign) && (
+            <View style={styles.techSelectionWrap}>
+              <Text style={styles.techSelectionTitle}>
+                {order.technicianId ? 'Pilih Teknisi Pengganti:' : 'Pilih Teknisi:'}
+              </Text>
+
+              <View style={styles.techPickerList}>
+                {technicians.map((tech) => {
+                  const isSelected = order.technicianId === tech.id;
+                  return (
+                    <TouchableOpacity
+                      key={tech.id}
+                      style={[
+                        styles.techPickerItem,
+                        isSelected && styles.techPickerItemSelected,
+                      ]}
+                      activeOpacity={0.75}
+                      onPress={() => handleAssign(tech.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Tugaskan teknisi ${tech.name}`}>
+                      <View style={styles.techPickerAvatar}>
+                        <Text style={styles.techPickerAvatarText}>
+                          {tech.name.charAt(0).toUpperCase()}
+                        </Text>
+                      </View>
+
+                      <View style={styles.techPickerInfo}>
+                        <View style={styles.techPickerTop}>
+                          <Text style={styles.techPickerName}>{tech.name}</Text>
+                          <TechnicianStatusBadge status={tech.status} />
+                        </View>
+                        <Text style={styles.techPickerSpec}>
+                          {tech.specialization}
+                        </Text>
+                        <Text style={styles.techPickerMeta}>
+                          ⭐ {tech.rating} • 📞 {tech.phone}
+                        </Text>
+                      </View>
+
+                      <View
+                        style={[
+                          styles.techAssignActionBtn,
+                          isSelected && styles.techAssignActionBtnSelected,
+                        ]}>
+                        <Text
+                          style={[
+                            styles.techAssignActionBtnText,
+                            isSelected && styles.techAssignActionBtnTextSelected,
+                          ]}>
+                          {isSelected ? 'Ditugaskan' : 'Pilih'}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
           )}
 
@@ -608,6 +720,25 @@ const styles = StyleSheet.create({
     color: ACareColors.slate500,
     marginBottom: 12,
     lineHeight: 16,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  reassignToggleBtn: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: ACareColors.slate100,
+    borderWidth: 1,
+    borderColor: ACareColors.slate200,
+  },
+  reassignToggleBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: ACareColors.primary,
   },
 
   // ── Status Options Wrap ─────────────────────────────────────────────────────
@@ -818,6 +949,107 @@ const styles = StyleSheet.create({
     color: ACareColors.primary,
     fontWeight: '600',
     marginTop: 2,
+  },
+  techAssignedContainer: {
+    gap: 12,
+  },
+  viewTechProfileBtn: {
+    backgroundColor: ACareColors.primaryLight,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+  },
+  viewTechProfileBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: ACareColors.primaryDark,
+  },
+  techSelectionWrap: {
+    marginTop: 14,
+    gap: 8,
+  },
+  techSelectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: ACareColors.slate700,
+  },
+  techPickerList: {
+    gap: 8,
+  },
+  techPickerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: ACareColors.slate50,
+    borderWidth: 1.5,
+    borderColor: ACareColors.slate200,
+  },
+  techPickerItemSelected: {
+    backgroundColor: '#F0F9FF',
+    borderColor: ACareColors.primary,
+  },
+  techPickerAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: ACareColors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  techPickerAvatarText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: ACareColors.primary,
+  },
+  techPickerInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  techPickerTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 6,
+  },
+  techPickerName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: ACareColors.slate900,
+    flex: 1,
+  },
+  techPickerSpec: {
+    fontSize: 11,
+    color: ACareColors.slate500,
+  },
+  techPickerMeta: {
+    fontSize: 11,
+    color: ACareColors.slate600,
+    fontWeight: '600',
+  },
+  techAssignActionBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: ACareColors.white,
+    borderWidth: 1,
+    borderColor: ACareColors.slate300,
+  },
+  techAssignActionBtnSelected: {
+    backgroundColor: ACareColors.primary,
+    borderColor: ACareColors.primary,
+  },
+  techAssignActionBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: ACareColors.slate700,
+  },
+  techAssignActionBtnTextSelected: {
+    color: ACareColors.white,
   },
   techUnassignedBox: {
     backgroundColor: ACareColors.slate50,

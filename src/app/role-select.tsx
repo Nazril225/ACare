@@ -10,8 +10,10 @@
  * di root layout begitu `setRole(...)` dipanggil.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
+  Modal,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,9 +22,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { TechnicianLoginPicker } from '@/components/technician/technician-login-picker';
 import { ACareColors } from '@/constants/theme';
 import { useACare } from '@/context/acare-context';
-import { UserRole } from '@/types/acare';
+import { Technician, UserRole } from '@/types/acare';
 
 // ─── Tipe ─────────────────────────────────────────────────────────────────────
 
@@ -53,16 +56,35 @@ const ROLE_OPTIONS: RoleOption[] = [
     description:
       'Kelola pesanan masuk, tugaskan teknisi, serta pantau pelanggan dan data master.',
   },
+  {
+    role: 'technician',
+    icon: '👷',
+    title: 'Teknisi',
+    subtitle: 'Area pengerjaan lapangan',
+    description:
+      'Lihat pesanan yang ditugaskan, perbarui status pengerjaan, dan catat hasil servis AC.',
+  },
 ];
 
 // ─── Komponen ─────────────────────────────────────────────────────────────────
 
 export default function RoleSelectScreen() {
   const insets = useSafeAreaInsets();
-  const { setRole } = useACare();
+  const { setRole, technicians, setCurrentTechnician } = useACare();
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   function handleSelectRole(option: RoleOption) {
+    if (option.role === 'technician') {
+      setPickerOpen(true);
+      return;
+    }
     setRole(option.role);
+  }
+
+  function handleSelectTechnician(technician: Technician) {
+    setPickerOpen(false);
+    setCurrentTechnician(technician);
+    setRole('technician');
   }
 
   return (
@@ -119,6 +141,24 @@ export default function RoleSelectScreen() {
         Mode demo — seluruh data disimpan di memori dan tidak permanen.
       </Text>
 
+      {/* ── Modal Pilih Identitas Teknisi ───────────────────────────────────── */}
+      <Modal
+        visible={pickerOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPickerOpen(false)}>
+        <Pressable style={styles.backdrop} onPress={() => setPickerOpen(false)}>
+          <Pressable style={styles.sheet} onPress={() => {}}>
+            <View style={styles.sheetHandle} />
+            <TechnicianLoginPicker
+              technicians={technicians}
+              selectedId={null}
+              onSelect={handleSelectTechnician}
+              onCancel={() => setPickerOpen(false)}
+            />
+          </Pressable>
+        </Pressable>
+      </Modal>
 
     </ScrollView>
   );
@@ -242,5 +282,28 @@ const styles = StyleSheet.create({
     color: ACareColors.slate400,
     textAlign: 'center',
     lineHeight: 16,
+  },
+
+  // ── Modal Teknisi ───────────────────────────────────────────────────────────
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: ACareColors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 28,
+  },
+  sheetHandle: {
+    alignSelf: 'center',
+    width: 44,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: ACareColors.slate200,
+    marginBottom: 12,
   },
 });

@@ -76,6 +76,14 @@ interface ACareContextType {
   currentUser: CustomerUser;
   /** Ganti profil pelanggan aktif. */
   setCurrentUser: (user: CustomerUser) => void;
+  /**
+   * Teknisi yang sedang "login" pada peran technician.
+   * `null` berarti belum ada identitas teknisi terpilih; peran technician
+   * hanya boleh diaktifkan setelah teknisi dipilih.
+   */
+  currentTechnician: Technician | null;
+  /** Tetapkan identitas teknisi aktif (dipakai sebelum masuk peran technician). */
+  setCurrentTechnician: (technician: Technician | null) => void;
 
   // ── Data Master (read-only dari luar context) ───────────────────────────────
   /** Daftar lengkap layanan AC yang tersedia. */
@@ -177,6 +185,11 @@ export function ACareProvider({ children }: ACareProviderProps) {
   // Profil pelanggan aktif (default: pelanggan pertama)
   const [currentUser, setCurrentUser] = useState<CustomerUser>(
     INITIAL_CUSTOMERS[0]
+  );
+
+  // Identitas teknisi aktif (default: belum dipilih → null)
+  const [currentTechnician, setCurrentTechnician] = useState<Technician | null>(
+    null
   );
 
   // Daftar pesanan
@@ -352,6 +365,8 @@ export function ACareProvider({ children }: ACareProviderProps) {
       setRole,
       currentUser,
       setCurrentUser,
+      currentTechnician,
+      setCurrentTechnician,
       services,
       technicians,
       customers,
@@ -368,6 +383,7 @@ export function ACareProvider({ children }: ACareProviderProps) {
     [
       role,
       currentUser,
+      currentTechnician,
       technicians,
       orders,
       activeCustomerOrders,
