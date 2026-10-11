@@ -172,6 +172,136 @@ function nowTimestamp(): string {
   return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
 }
 
+// ─── Reducer untuk sinkronisasi orders & technicians ────────────────────────
+
+interface CreateOrderAction {
+  type: 'CREATE_ORDER';
+  order: Order;
+}
+
+interface AssignTechnicianAction {
+  type: 'ASSIGN_TECHNICIAN';
+  orderId: string;
+  technicianId: string;
+  technicianName: string;
+}
+
+interface UpdateStatusAction {
+  type: 'UPDATE_STATUS';
+  orderId: string;
+  status: OrderStatus;
+  notes?: string;
+}
+
+interface CancelOrderAction {
+  type: 'CANCEL_ORDER';
+  orderId: string;
+  reason?: string;
+}
+
+type ACareAction =
+  | CreateOrderAction
+  | AssignTechnicianAction
+  | UpdateStatusAction
+  | CancelOrderAction;
+
+interface ACareState {
+  orders: Order[];
+  technicians: Technician[];
+}
+
+function aCareReducer(state: ACareState, action: ACareAction): ACareState {
+  switch (action.type) {
+    case 'CREATE_ORDER': {
+      return {
+        ...state,
+        orders: [action.order, ...state.orders],
+      };
+    }
+    case 'ASSIGN_TECHNICIAN': {
+      const { orderId, technicianId, technicianName } = action;
+      const nextOrders = state.orders.map((order) => {
+        if (order.id !== orderId) return order;
+        return {
+          ...order,
+          technicianId,
+          technicianName,
+          status: order.status === 'Menunggu Konfirmasi' ? 'Dikonfirmasi' : order.status,
+        };
+      });
+      const nextTechnicians = state.technicians.map((t) =>
+        t.id === technicianId ? { ...t, status: 'Bertugas' as TechnicianStatus } : t
+      );
+      return { orders: nextOrders, technicians: nextTechnicians };
+    }
+    case 'UPDATE_STATUS': {
+      const { orderId, status, notes } = action;
+      const target = state.orders.find((o) => o.id === orderId);
+      if (!target) return state;
+
+      const updatedOrder: Order = {
+        ...target,
+        status,
+        paymentStatus: status === 'Selesai' ? 'Lunas' : target.paymentStatus,
+        technicianNotes: notes !== undefined ? notes : target.technicianNotes,
+      };
+
+      const nextOrders = state.orders.map((o) => (o.id === orderId ? updatedOrder : o));
+      const techId = target.technicianId;
+
+      let nextTechnicians = state.technicians;
+      if ((status === 'Selesai' || status === 'Dibatalkan') && techId) {
+        nextTechnicians = state.technicians.map((t) => {
+          if (t.id !== techId) return t;
+          if (t.status === 'Libur') return t;
+          const stillHasActive = nextOrders.some(
+            (o) =>
+              o.technicianId === techId &&
+              o.status !== 'Selesai' &&
+              o.status !== 'Dibatalkan'
+          );
+          return stillHasActive ? t : { ...t, status: 'Tersedia' as TechnicianStatus };
+        });
+      }
+
+      return { orders: nextOrders, technicians: nextTechnicians };
+    }
+    case 'CANCEL_ORDER': {
+      const { orderId, reason } = action;
+      const target = state.orders.find((o) => o.id === orderId);
+      if (!target) return state;
+
+      const updatedOrder: Order = {
+        ...target,
+        status: 'Dibatalkan' as OrderStatus,
+        technicianNotes: reason ? `Dibatalkan: ${reason}` : 'Dibatalkan atas permintaan.',
+      };
+
+      const nextOrders = state.orders.map((o) => (o.id === orderId ? updatedOrder : o));
+      const techId = target.technicianId;
+
+      let nextTechnicians = state.technicians;
+      if (techId) {
+        nextTechnicians = state.technicians.map((t) => {
+          if (t.id !== techId) return t;
+          if (t.status === 'Libur') return t;
+          const stillHasActive = nextOrders.some(
+            (o) =>
+              o.technicianId === techId &&
+              o.status !== 'Selesai' &&
+              o.status !== 'Dibatalkan'
+          );
+          return stillHasActive ? t : { ...t, status: 'Tersedia' as TechnicianStatus };
+        });
+      }
+
+      return { orders: nextOrders, technicians: nextTechnicians };
+    }
+    default:
+      return state;
+  }
+}
+
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 interface ACareProviderProps {
@@ -192,11 +322,11 @@ export function ACareProvider({ children }: ACareProviderProps) {
     null
   );
 
-  // Daftar pesanan
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
-
-  // Daftar teknisi (bisa berubah statusnya saat penugasan)
-  const [technicians, setTechnicians] = useState<Technician[]>(TECHNICIANS_DATA);
+  // Daftar pesanan & teknisi (dikelola bersama untuk menjaga konsistensi)
+  const [{ orders, technicians }, dispatch] = React.useReducer(aCareReducer, {
+    orders: INITIAL_ORDERS,
+    technicians: TECHNICIANS_DATA,
+  });
 
   // Data master statis
   const services: ServiceItem[] = SERVICES_DATA;
@@ -267,7 +397,7 @@ export function ACareProvider({ children }: ACareProviderProps) {
         acUnitsCount: data.acUnitsCount,
       };
 
-      setOrders((prev) => [newOrder, ...prev]);
+      dispatch({ type: 'CREATE_ORDER', order: newOrder });
       return newOrder;
     },
     [orders.length, currentUser]
@@ -277,17 +407,12 @@ export function ACareProvider({ children }: ACareProviderProps) {
 
   const updateOrderStatus = useCallback(
     (orderId: string, status: OrderStatus, notes?: string) => {
-      setOrders((prev) =>
-        prev.map((order) => {
-          if (order.id !== orderId) return order;
-          return {
-            ...order,
-            status,
-            paymentStatus: status === 'Selesai' ? 'Lunas' : order.paymentStatus,
-            technicianNotes: notes !== undefined ? notes : order.technicianNotes,
-          };
-        })
-      );
+      dispatch({
+        type: 'UPDATE_STATUS',
+        orderId,
+        status,
+        notes,
+      });
     },
     []
   );
@@ -298,31 +423,12 @@ export function ACareProvider({ children }: ACareProviderProps) {
     (orderId: string, technicianId: string) => {
       const tech = technicians.find((t) => t.id === technicianId);
       if (!tech) return;
-
-      // Perbarui pesanan: isi teknisi, dan naikkan status jika masih "Menunggu Konfirmasi"
-      setOrders((prev) =>
-        prev.map((order) => {
-          if (order.id !== orderId) return order;
-          return {
-            ...order,
-            technicianId: tech.id,
-            technicianName: tech.name,
-            status:
-              order.status === 'Menunggu Konfirmasi'
-                ? 'Dikonfirmasi'
-                : order.status,
-          };
-        })
-      );
-
-      // Perbarui status teknisi menjadi "Bertugas"
-      setTechnicians((prev) =>
-        prev.map((t) =>
-          t.id === technicianId
-            ? { ...t, status: 'Bertugas' as TechnicianStatus }
-            : t
-        )
-      );
+      dispatch({
+        type: 'ASSIGN_TECHNICIAN',
+        orderId,
+        technicianId: tech.id,
+        technicianName: tech.name,
+      });
     },
     [technicians]
   );
@@ -331,19 +437,11 @@ export function ACareProvider({ children }: ACareProviderProps) {
 
   const cancelOrder = useCallback(
     (orderId: string, reason?: string) => {
-      setOrders((prev) =>
-        prev.map((order) => {
-          if (order.id !== orderId) return order;
-          const cancelNote = reason
-            ? `Dibatalkan: ${reason}`
-            : 'Dibatalkan atas permintaan.';
-          return {
-            ...order,
-            status: 'Dibatalkan' as OrderStatus,
-            technicianNotes: cancelNote,
-          };
-        })
-      );
+      dispatch({
+        type: 'CANCEL_ORDER',
+        orderId,
+        reason,
+      });
     },
     []
   );
